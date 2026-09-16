@@ -1,0 +1,76 @@
+# ===============================================
+# MicroService Platform root .gitignore
+# ===============================================
+
+# ----- Maven / Backend -----
+**/target/
+**/*.jar
+**/*.war
+**/*.class
+**/.idea/
+**/.vscode/
+**/.settings/
+**/.project
+**/.classpath
+**/dependency-reduced-pom.xml
+**/hs_err_pid*.log
+**/replay_pid*.log
+
+# ----- pnpm / Frontend -----
+**/node_modules/
+**/.pnpm-store/
+**/.turbo/
+**/.nuxt/
+**/.next/
+**/dist/
+**/.vite/
+**/.cache/
+
+# ----- 环境变量与密钥 -----
+**/.env
+**/.env.local
+**/.env.*.local
+**/.env.development
+**/.env.production
+**/.env.analyze
+**/.env.demo
+!.env.example
+
+# ----- IDE -----
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# ----- OS -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Logs -----
+**/*.log
+logs/
+*.log.*
+
+# ----- 临时文件 -----
+*.tmp
+*.bak
+*~
+*.swp
+*.swo
+
+# ----- 容器数据（开发环境）-----
+# 注意：附件/docker 的 docker-compose.yml 拉起的容器数据卷是命名卷，不在仓库里
+# 但本地若有意外 commit 的 Docker 数据目录，按需忽略
+
+# ----- Misc -----
+*.bak
+*.orig
+
+# ----- 项目本机 / 仓库本身不需要的 -----
+.claude/
+backend/附件/nacos/nacos-dev.zip

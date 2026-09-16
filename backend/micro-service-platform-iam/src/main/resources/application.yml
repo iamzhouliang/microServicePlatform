@@ -1,0 +1,40 @@
+server:
+  port: 15002
+# 应该配置到cloud-default.yaml中 需要广播的字典配置
+extend:
+  boot:
+    remote:
+      alone:
+        enabled: true
+        database: 1
+        # Redis服务器地址
+        host: ${spring.data.redis.host}
+        # Redis服务器连接端口
+        port: ${spring.data.redis.port}
+        # Redis服务器连接密码（默认为空）
+        password: ${spring.data.redis.password}
+        # 连接超时时间
+        timeout: 10s
+spring:
+  application:
+    name: micro-service-platform-iam
+  config:
+    import:
+      - optional:classpath:captcha.yaml
+      - optional:nacos:security.yaml
+      - optional:nacos:cloud-default.yaml
+      - optional:nacos:${spring.application.name}.properties
+      - optional:nacos:redis.properties
+      - optional:nacos:mybatis-plus-default.yaml
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      discovery:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: micro-service-platform
+      config:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: micro-service-platform
+  data:
+    redis:
+      client-name:

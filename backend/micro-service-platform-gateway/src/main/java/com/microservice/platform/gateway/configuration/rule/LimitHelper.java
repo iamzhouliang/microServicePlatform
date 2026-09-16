@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.platform.gateway.configuration.rule;
+
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.IdUtil;
+import com.google.common.collect.Lists;
+import com.microservice.framework.commons.JacksonUtils;
+import com.microservice.platform.gateway.rest.domain.BlacklistRule;
+import com.microservice.platform.gateway.rest.domain.LimitRule;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+
+import java.net.InetSocketAddress;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.microservice.platform.gateway.configuration.rule.GatewayRule.Constants.DEFAULT_RULE_LIMIT_TOTAL;
+import static com.microservice.platform.gateway.configuration.rule.GatewayRule.Constants.GLOBAL_RANGE;
+import static com.microservice.platform.gateway.configuration.rule.GatewayRule.GatewayRuleEnum.RULE_LIMIT;
+
+/**
+ * @author Levin
+ */
+@Component
+@RequiredArgsConstructor
+public class LimitHelper implements GatewayRule<LimitRule> {
+    
+    private final StringRedisTemplate stringRedisTemplate;
+    
+    private final BlacklistHelper blacklistHelper;
+    
+    public List<LimitRule> query() {
+        final Set<Object> keys = stringRedisTemplate.opsForHash().keys(RULE_LIMIT.hashKey());
+        if (CollectionUtil.isEmpty(keys)) {
+            return Lists.newArrayList();
+        }
+        return stringRedisTemplate.opsForHash().multiGet(RULE_LIMIT.hashKey(), keys).stream()
+                .map(object -> {
+                    LimitRule rule = JacksonUtils.toBean(object.toString(), LimitRule.class);
+                    if (rule != null) {
+                        final Object visits = Optional.ofNullable(stringRedisTemplate.opsForHash()
+                                .get(RULE_LIMIT.visitsKey(), rule.getId())).orElse("0");
+                        rule.setVisits(Long.parseLong(visits.toString()));
+                    }
+                    return rule;
+                }).collect(Collectors.toList());
+    }
+    
+    public void saveOrUpdate(LimitRule rule) {
+        if (rule == null) {
+            return;
+        }
+        if (rule.getId() == null) {
+            String uuid = IdUtil.fastSimpleUUID();
+            rule.setId(uuid);
+        }
+        if (rule.getCreateTime() == null) {
+            rule.setCreateTime(Instant.now());
+        }
+        stringRedisTemplate.opsForHash().put(RULE_LIMIT.hashKey(), rule.getId(), JacksonUtils.toJson(rule));
+    }
+    
+    public void delete(String id) {
+        stringRedisTemplate.opsForHash().delete(RULE_LIMIT.hashKey(), id);
+    }
+    
+    public boolean hostTrace(ServerWebExchange exchange) {
+        final ServerHttpRequest request = exchange.getRequest();
+        final InetSocketAddress remoteAddress = request.getRemoteAddress();
+        if (remoteAddress == null) {
+            return false;
+        }
+        final String hostName = remoteAddress.getAddress().getHostName();
+        final LimitRule limitRule = getByPath(stringRedisTemplate, exchange.getRequest(), RULE_LIMIT);
+        if (limitRule == null) {
+            return false;
+        }
+        Long increment;
+        if (limitRule.getRange() == GLOBAL_RANGE) {
+            increment = stringRedisTemplate.opsForHash().increment(DEFAULT_RULE_LIMIT_TOTAL, limitRule.getId(), 1);
+        } else {
+            increment = stringRedisTemplate.opsForHash().increment(DEFAULT_RULE_LIMIT_TOTAL, hostName, 1);
+        }
+        stringRedisTemplate.opsForHash().put(RULE_LIMIT.visitsKey(), limitRule.getId(), String.valueOf(increment));
+        boolean overflow = increment > limitRule.getTotal();
+        if (overflow && limitRule.getBlacklist()) {
+            final BlacklistRule blacklistRule = blacklistHelper.getById(limitRule.getId());
+            if (blacklistRule != null) {
+                return true;
+            }
+            // 添加黑名单
+            BlacklistRule record = new BlacklistRule();
+            record.setId(limitRule.getId());
+            record.setDescription("访问" + limitRule.getPath() + "频率过快被拉入黑名单24小时");
+            record.setStatus(true);
+            final Instant now = Instant.now();
+            record.setStartTime(now);
+            record.setEndTime(now.plus(1, ChronoUnit.HOURS));
+            record.setIp(remoteAddress.getAddress().getHostAddress());
+            record.setMethod(limitRule.getMethod());
+            record.setPath(limitRule.getPath());
+            blacklistHelper.saveOrUpdate(record);
+        }
+        return overflow;
+    }
+}

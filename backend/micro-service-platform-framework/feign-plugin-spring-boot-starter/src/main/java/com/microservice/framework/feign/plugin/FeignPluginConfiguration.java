@@ -1,0 +1,160 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.framework.feign.plugin;
+
+import com.microservice.framework.feign.plugin.decoder.FeignResponseDecoder;
+import com.microservice.framework.feign.plugin.mock.FeignPluginInterceptor;
+import com.microservice.framework.feign.plugin.mock.MockLoadBalancerFeignClient;
+import com.microservice.framework.feign.plugin.mock.MockProperties;
+import feign.Client;
+import feign.Logger;
+import feign.codec.Decoder;
+import feign.codec.ErrorDecoder;
+import feign.optionals.OptionalDecoder;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.*;
+import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
+import org.springframework.cloud.openfeign.loadbalancer.LoadBalancerFeignRequestTransformer;
+import org.springframework.cloud.openfeign.FeignLoggerFactory;
+import org.springframework.cloud.openfeign.support.FeignHttpMessageConverters;
+import org.springframework.cloud.openfeign.support.HttpMessageConverterCustomizer;
+import org.springframework.cloud.openfeign.support.ResponseEntityDecoder;
+import org.springframework.cloud.openfeign.support.SpringDecoder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+
+/**
+ * @author Levin
+ */
+@Slf4j
+@Configuration
+@EnableConfigurationProperties(value = { FeignPluginProperties.class, MockProperties.class })
+public class FeignPluginConfiguration {
+
+    @Bean
+    public Logger.Level feignLoggerLevel(FeignPluginProperties properties) {
+        Logger.Level level = properties.getLevel() != null ? properties.getLevel() : Logger.Level.BASIC;
+        log.info("Feign 日志级别: {}", level);
+        return level;
+    }
+
+    /**
+     * 统一过滤认证头，避免详细日志配置把用户令牌或服务令牌写入日志文件。
+     *
+     * @return 过滤敏感认证头的 Feign 日志工厂
+     */
+    @Bean
+    public FeignLoggerFactory feignLoggerFactory() {
+        return SensitiveHeaderFilteringFeignLogger::new;
+    }
+
+    @Bean
+    public LoadBalancerLifecycle<Object, Object, ServiceInstance> logIpWhenError() {
+        return new LoadBalancerLifecycle<>() {
+
+            @Override
+            public void onStart(Request<Object> request) {
+                // 请求开始前，暂时不需要做啥
+                log.debug("request => {}", request);
+            }
+
+            @Override
+            public void onStartRequest(Request<Object> request, Response<ServiceInstance> lbResponse) {
+                // 选完 IP，发起请求前。如果想看这次选了谁，也可以在这里打日志
+                ServiceInstance instance = lbResponse.getServer();
+                log.debug("instance => {}", instance);
+            }
+
+            @Override
+            public void onComplete(CompletionContext<Object, ServiceInstance, Object> completionContext) {
+                ServiceInstance instance = completionContext.getLoadBalancerResponse().getServer();
+                if (instance == null) {
+                    return;
+                }
+                if (completionContext.status() == CompletionContext.Status.FAILED) {
+                    Throwable error = completionContext.getThrowable();
+                    log.error("LoadBalancer调用失败 - 目标服务: {} , 地址: {}:{} - 异常信息: {}", instance.getServiceId(),
+                            instance.getHost(), instance.getPort(),
+                            error != null ? error.getMessage() : "未知错误", error);
+                } else {
+                    log.debug("LoadBalancer调用成功 - 目标服务: {} , 地址: {}:{}", instance.getServiceId(), instance.getHost(),
+                            instance.getPort());
+                }
+            }
+        };
+    }
+
+    @Bean
+    @Primary
+    @LoadBalanced
+    public RestTemplate lbRestTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FeignHttpMessageConverters feignHttpMessageConverters(
+            ObjectProvider<HttpMessageConverter<?>> messageConverters,
+            ObjectProvider<HttpMessageConverterCustomizer> customizers) {
+        return new FeignHttpMessageConverters(messageConverters, customizers);
+    }
+
+    @Bean
+    public Decoder feignDecoder(ObjectProvider<FeignHttpMessageConverters> messageConverters) {
+        return new OptionalDecoder(new ResponseEntityDecoder(
+                new FeignResponseDecoder(new SpringDecoder(messageConverters))));
+    }
+
+    @Bean
+    public ErrorDecoder errorDecoder() {
+        return (s, response) -> {
+            log.warn("response status is:{}", response.status());
+            return new ErrorDecoder.Default().decode(s, response);
+        };
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnProperty(prefix = MockProperties.MOCK_PREFIX, name = "enabled", havingValue = "true")
+    public Client feignClient(LoadBalancerClient loadBalancerClient,
+            LoadBalancerClientFactory loadBalancerClientFactory,
+            List<LoadBalancerFeignRequestTransformer> transformers,
+            MockProperties mockProperties) {
+        return new MockLoadBalancerFeignClient(new Client.Default(null, null),
+                loadBalancerClient, loadBalancerClientFactory, transformers, mockProperties);
+    }
+
+    @Bean
+    @Order(-999999)
+    public FeignPluginInterceptor feignPluginInterceptor(FeignPluginProperties properties) {
+        return new FeignPluginInterceptor(properties);
+    }
+}

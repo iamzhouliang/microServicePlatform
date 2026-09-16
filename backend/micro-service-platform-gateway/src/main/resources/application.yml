@@ -1,0 +1,23 @@
+server:
+  port: 15000
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: micro-service-platform-gateway
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.properties
+      - optional:nacos:redis.properties
+      - optional:nacos:cloud-default.yaml
+      - optional:classpath:gateway-swagger.yaml
+      - optional:classpath:gateway-route.yaml
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      discovery:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: micro-service-platform
+      config:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: micro-service-platform

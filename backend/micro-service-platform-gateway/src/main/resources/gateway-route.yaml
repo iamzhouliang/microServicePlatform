@@ -1,0 +1,89 @@
+spring:
+  cloud:
+    gateway:
+      # 动态路由
+      dynamic-route:
+        type: redis
+        enabled: true
+      server:
+        webflux:
+          enabled: true
+          discovery:
+            locator:
+              enabled: true
+              lowerCaseServiceId: true
+          routes:
+            - id: micro-service-platform-iam
+              uri: lb://micro-service-platform-iam
+              predicates:
+                - Path=/iam/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 100   # 允许用户每秒处理多少个请求
+                    redis-rate-limiter.burstCapacity: 100   # 令牌桶的容量，允许在一秒钟内完成的最大请求数
+                    # 使用 IP 限流策略（使用 SpEL 按名称引用 bean）
+                    key-resolver: "#{@ipKeyResolver}"
+                - StripPrefix=1
+                - PreserveHostHeader
+                - name: Retry
+                  args:
+                    retries: 1
+                    statuses: BAD_GATEWAY
+                    backoff:
+                      firstBackoff: 200ms
+                      maxBackoff: 500ms
+                      factor: 1
+                      basedOnPreviousValue: false
+                      exceptions: TimeoutException
+            - id: micro-service-platform-iam-ws
+              uri: lb:ws://micro-service-platform-iam
+              predicates:
+                - Path=/iam/**
+              filters:
+                - StripPrefix=1
+            - id: micro-service-platform-suite
+              uri: lb://micro-service-platform-suite
+              predicates:
+                - Path=/suite/**
+              filters:
+                - StripPrefix=1
+                - PreserveHostHeader
+            - id: micro-service-platform-monitor
+              uri: lb://micro-service-platform-monitor
+              predicates:
+                - Path=/monitor/**
+              filters:
+                - StripPrefix=1
+                - PreserveHostHeader
+            - id: micro-service-platform-demo
+              uri: lb://micro-service-platform-demo
+              predicates:
+                - Path=/demo/**
+              filters:
+                - StripPrefix=1
+                - PreserveHostHeader
+            - id: micro-service-platform-wms
+              uri: lb://micro-service-platform-wms
+              predicates:
+                - Path=/wms/**
+              filters:
+                - StripPrefix=1
+                - PreserveHostHeader
+            - id: micro-service-platform-ai
+              uri: lb://micro-service-platform-ai
+              predicates:
+                - Path=/ai/**
+              filters:
+                - StripPrefix=1
+                - PreserveHostHeader
+          loadbalancer:
+            use404: true
+          httpclient:
+            compression: true
+            response-timeout: 300s
+            pool:
+              type: elastic
+              max-idle-time: 30s
+              max-connections: 1000
+              acquire-timeout: 180000

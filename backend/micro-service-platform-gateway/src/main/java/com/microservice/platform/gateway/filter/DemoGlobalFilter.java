@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.platform.gateway.filter;
+
+import cn.hutool.core.collection.CollUtil;
+import com.microservice.platform.gateway.utils.MonoHelper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author Levin
+ */
+@Slf4j
+@Component
+@Profile("demo")
+public class DemoGlobalFilter implements GlobalFilter {
+
+
+    private static final Map<HttpMethod, List<String>> IGNORE_URL = Map.of(HttpMethod.POST, List.of("/resources/create"),
+            HttpMethod.DELETE, List.of("/token/logout"));
+
+    private boolean isReject(ServerWebExchange exchange) {
+        HttpMethod method = exchange.getRequest().getMethod();
+        List<String> urlList = IGNORE_URL.get(method);
+        if (CollUtil.isEmpty(urlList)) {
+            return false;
+        }
+        String path = exchange.getRequest().getURI().getPath();
+        return urlList.contains(path);
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        HttpMethod method = exchange.getRequest().getMethod();
+        if (method == HttpMethod.PUT || method == HttpMethod.DELETE || isReject(exchange)) {
+            return MonoHelper.wrap(exchange, "演示环境,禁止破坏基础数据,请下载代码自行部署（部署后请移除 gateway 服务中的 DemoGlobalFilter ）");
+        }
+        return chain.filter(exchange);
+    }
+
+}

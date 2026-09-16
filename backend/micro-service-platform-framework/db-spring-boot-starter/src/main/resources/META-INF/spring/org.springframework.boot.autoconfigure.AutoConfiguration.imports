@@ -1,0 +1,3 @@
+com.microservice.framework.db.configuration.BaseMybatisConfiguration
+com.microservice.framework.db.dynamic.DynamicDataSourceEventBusAutoConfiguration
+com.microservice.framework.db.dynamic.DynamicDataSourceWebMvcAutoConfiguration

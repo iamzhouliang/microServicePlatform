@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.platform.ai.domain.dto.resp;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import java.util.Map;
+
+/**
+ * 向量化任务分页响应
+ * 仅暴露前端/调用方需要的业务字段，避免直接返回实体（不泄漏 deleted / tenantId / 审计字段）。
+ *
+ * @author xJh
+ * @since 2025/12
+ */
+@Data
+@Schema(description = "向量化任务分页响应")
+public class VectorizationTaskPageResp {
+
+    @Schema(description = "主键 ID")
+    private Long id;
+
+    @Schema(description = "任务ID（业务唯一标识）")
+    private String taskId;
+
+    @Schema(description = "知识库ID")
+    private Long kbId;
+
+    @Schema(description = "知识条目ID")
+    private Long itemId;
+
+    @Schema(description = "任务类型（DOCUMENT/QA_PAIR/STRUCTURED/BATCH/KNOWLEDGE_ITEM）")
+    private String taskType;
+
+    @Schema(description = "任务状态（PENDING/PROCESSING/COMPLETED/FAILED）")
+    private String status;
+
+    @Schema(description = "处理进度（0-100）")
+    private Integer progress;
+
+    @Schema(description = "结果向量ID列表")
+    private Map<String, Object> vectorIds;
+
+    @Schema(description = "错误信息")
+    private String errorMessage;
+
+    @Schema(description = "消耗的Token数")
+    private Integer tokenUsage;
+}

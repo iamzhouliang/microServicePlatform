@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.framework.robot;
+
+import com.microservice.framework.robot.handler.DefaultIErrorMessageHandler;
+import com.microservice.framework.robot.handler.IErrorMessageHandler;
+import com.microservice.framework.robot.message.exception.DefaultRobotExceptionMessage;
+import com.microservice.framework.robot.message.exception.IRobotExceptionMessage;
+import com.microservice.framework.robot.message.exception.RobotExceptionNotifyAspect;
+import com.microservice.framework.robot.message.push.DingTalkRobotMessageHandler;
+import com.microservice.framework.robot.message.push.FeiShuRobotMessageHandler;
+import com.microservice.framework.robot.message.push.RobotMessageHandler;
+import com.microservice.framework.robot.message.push.WeChatRobotMessageHandler;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+
+/**
+ * 机器人消息推送自动配置
+ * <p>支持钉钉、企业微信、飞书等多种机器人</p>
+ *
+ * @author Levin
+ */
+@Slf4j
+@Configuration
+@RequiredArgsConstructor
+@EnableConfigurationProperties({RobotProperties.class})
+public class RobotAutoConfiguration {
+
+    /**
+     * 使用ObjectProvider延迟注入，避免循环依赖
+     */
+    private final ObjectProvider<List<RobotMessageHandler>> handlersProvider;
+
+    /**
+     * 初始化RobotClient（注册所有处理器）
+     */
+    @PostConstruct
+    public void initRobotClient() {
+        List<RobotMessageHandler> handlers = handlersProvider.getIfAvailable();
+        if (handlers != null && !handlers.isEmpty()) {
+            handlers.forEach(RobotClient::registerHandler);
+            log.info("Initialized RobotClient with {} handlers", handlers.size());
+        }
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public IErrorMessageHandler errorMessageHandler() {
+        return new DefaultIErrorMessageHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DefaultRobotExceptionMessage robotSendException(List<RobotMessageHandler> robotMessageTemplateList, IErrorMessageHandler IErrorMessageHandler) {
+        return new DefaultRobotExceptionMessage(robotMessageTemplateList, IErrorMessageHandler);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = RobotProperties.PREFIX, name = "enabled", havingValue = "true")
+    public RobotExceptionNotifyAspect exceptionAspect(IRobotExceptionMessage sendException) {
+        return new RobotExceptionNotifyAspect(sendException);
+    }
+
+    /**
+     * 钉钉
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = RobotProperties.DING_TALK_PREFIX, name = "enabled", havingValue = "true")
+    public RobotMessageHandler dingTalkRobotMessageHandler(RobotProperties robotProperties) {
+        return new DingTalkRobotMessageHandler(robotProperties);
+    }
+
+    /**
+     * 企业微信
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = RobotProperties.WECHAT_PREFIX, name = "enabled", havingValue = "true")
+    public RobotMessageHandler weChatRobotMessageHandler(RobotProperties robotProperties) {
+        return new WeChatRobotMessageHandler(robotProperties);
+    }
+
+    /**
+     * 飞书
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = RobotProperties.FEI_SHU_PREFIX, name = "enabled", havingValue = "true")
+    public RobotMessageHandler feiShuRobotMessageHandler(RobotProperties robotProperties) {
+        return new FeiShuRobotMessageHandler(robotProperties);
+    }
+}

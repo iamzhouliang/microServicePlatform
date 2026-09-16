@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.platform.iam.system.domain.dto.req;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.Data;
+import org.hibernate.validator.constraints.Length;
+
+/**
+ * 当前用户密码修改请求
+ *
+ * @author Levin
+ */
+@Data
+@Schema(name = "UserPasswordUpdateReq", description = "当前用户密码修改请求")
+public class UserPasswordUpdateReq {
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Schema(description = "当前密码", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @NotBlank(message = "当前密码不能为空")
+    @Length(max = 64, message = "当前密码长度不能超过{max}")
+    private String currentPassword;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Schema(description = "新密码", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @NotBlank(message = "新密码不能为空")
+    @Length(max = 64, message = "新密码长度不能超过{max}")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            message = "密码不符合复杂性要求，必须包含至少8个字符，其中包括一个大写字母、一个小写字母、一个数字和一个特殊字符。")
+    private String newPassword;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Schema(description = "确认密码", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @NotBlank(message = "确认密码不能为空")
+    @Length(max = 64, message = "确认密码长度不能超过{max}")
+    private String confirmPassword;
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microservice.platform.iam.system.repository.RoleResMapper">
+
+    <select id="selectTenantAdminResIdList" resultType="java.lang.Long">
+        SELECT res_id
+        FROM sys_role_res t1
+        WHERE t1.deleted = FALSE
+          AND EXISTS (SELECT id FROM sys_role WHERE CODE = 'TENANT-ADMIN' AND role_id = t1.role_id)
+    </select>
+</mapper>

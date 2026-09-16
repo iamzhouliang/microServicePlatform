@@ -1,0 +1,3 @@
+com.microservice.framework.redis.plus.RedisPlusAutoConfiguration
+com.microservice.framework.redis.plus.cache.RedisCacheAutoConfiguration
+com.microservice.framework.redis.plus.listener.RedisListenerAutoConfiguration

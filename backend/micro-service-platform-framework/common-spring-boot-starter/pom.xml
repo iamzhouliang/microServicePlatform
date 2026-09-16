@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.microservice.framework</groupId>
+        <artifactId>micro-service-platform-framework</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>common-spring-boot-starter</artifactId>
+    <name>${project.artifactId}</name>
+    <description>通用 Spring Boot Starter，聚合所有基础模块，提供 Web、监控、缓存等核心功能</description>
+
+    <dependencies>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- 内部模块 -->
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>common-framework-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>i18n-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>redis-plus-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>diff-log-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>easyexcel-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>feign-plugin-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>db-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>security-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Web (使用 Undertow 替代 Tomcat) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+        </dependency>
+
+        <!-- Spring Boot 基础 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud Alibaba -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- 监控与追踪 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-client</artifactId>
+        </dependency>
+
+        <!-- 缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- API 文档 -->
+        <dependency>
+            <groupId>com.github.xingfudeshi</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

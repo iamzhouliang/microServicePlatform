@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.microservice.platform.iam.base.repository.I18nDataMapper">
+
+    <resultMap id="i18nResultMap" type="com.microservice.platform.iam.base.domain.dto.resp.I18nDataPageResp">
+        <id property="code" column="code"/>
+        <result property="remark" column="remark"/>
+        <result property="createName" column="create_name"/>
+        <result property="createTime" column="create_time"/>
+        <collection property="languages" ofType="com.microservice.platform.iam.base.domain.entity.I18nLocaleMessage">
+            <result property="locale" column="locale"/>
+            <result property="message" column="message"/>
+        </collection>
+    </resultMap>
+
+    <select id="loadI18nMessage" resultType="com.microservice.framework.i18n.domain.I18nMessage">
+        SELECT t1.code,
+               t1.tenant_id,
+               t2.message,
+               t2.locale
+        FROM c_i18n_data t1
+                 join c_i18n_locale_message t2 on t1.id = t2.parent_id
+    </select>
+
+
+</mapper>

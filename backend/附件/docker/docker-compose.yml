@@ -1,0 +1,138 @@
+# ============================================================
+# MicroService Platform Docker Compose
+# 
+# 使用前请先创建网络: docker network create micro-service
+# 启动命令: docker-compose up -d
+# 停止命令: docker-compose down
+# 查看日志: docker-compose logs -f [service_name]
+# ============================================================
+
+networks:
+  micro-service:
+    external: true
+
+services:
+  # ==================== MySQL 8.4 LTS ====================
+  # 官方镜像: https://hub.docker.com/_/mysql
+  # 版本说明: 8.4 (LTS 长期支持版本，推荐生产使用)
+  mysql:
+    image: mysql:8.4
+    container_name: micro-service-mysql
+    hostname: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_HOST: '%'
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --explicit_defaults_for_timestamp=true
+      - --lower_case_table_names=1
+      - --max_allowed_packet=128M
+      - --authentication_policy=caching_sha2_password
+      - --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_conf:/etc/mysql/conf.d
+    networks:
+      - micro-service
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Redis 7.4 ====================
+  # 官方镜像: https://hub.docker.com/_/redis
+  # 版本说明: 7.4-alpine (最新稳定版，Alpine轻量镜像)
+  redis:
+    image: redis:7.4-alpine
+    container_name: micro-service-redis
+    hostname: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - micro-service
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Nacos 2.5.2 ====================
+  # 官方镜像: https://hub.docker.com/r/nacos/nacos-server
+  # 版本说明: v2.5.2 (2025 稳定版，兼容 Spring Cloud Alibaba 2023.x)
+  nacos:
+    image: nacos/nacos-server:v2.5.2
+    container_name: micro-service-nacos
+    hostname: nacos
+    restart: always
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 512m
+      JVM_XMX: 512m
+      JVM_XMN: 256m
+      TZ: Asia/Shanghai
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - nacos_data:/home/nacos/data
+      - nacos_logs:/home/nacos/logs
+    networks:
+      - micro-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==================== RabbitMQ 4.0 ====================
+  # 官方镜像: https://hub.docker.com/_/rabbitmq
+  # 版本说明: 4.0-management (带管理界面)
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: micro-service-rabbitmq
+    hostname: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+      TZ: Asia/Shanghai
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # Management UI
+      - "25672:25672"    # Cluster
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - micro-service
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# ==================== 数据卷 ====================
+volumes:
+  mysql_data:
+    driver: local
+  mysql_conf:
+    driver: local
+  redis_data:
+    driver: local
+  nacos_data:
+    driver: local
+  nacos_logs:
+    driver: local
+  rabbitmq_data:
+    driver: local

@@ -1,0 +1,10 @@
+com.microservice.framework.boot.base.GlobalExceptionHandler
+com.microservice.framework.boot.base.configuration.DefaultWebMvcConfiguration
+com.microservice.framework.boot.log.configuration.AccessLogAutoConfiguration
+com.microservice.framework.boot.remote.configuration.RemoteAutoConfiguration
+com.microservice.framework.boot.response.GlobalResponseBodyAdvice
+com.microservice.framework.boot.security.AuthenticationContextConfiguration
+com.microservice.framework.boot.async.AsyncConfiguration
+com.baomidou.dynamic.datasource.spring.boot.autoconfigure.DynamicDataSourceAutoConfiguration
+com.microservice.framework.boot.response.GlobalJsonDeserializer
+com.microservice.framework.boot.remote.configuration.RemoteAloneRedisAutoConfiguration

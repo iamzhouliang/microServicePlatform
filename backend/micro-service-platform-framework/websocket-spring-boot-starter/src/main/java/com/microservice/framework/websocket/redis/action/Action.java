@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.framework.websocket.redis.action;
+
+import com.microservice.framework.websocket.WebSocketManager;
+
+import java.util.Map;
+
+/**
+ * 要做的事情
+ *
+ * @author Levin
+ */
+public interface Action {
+
+    String IDENTIFIER = "identifier";
+    String MESSAGE = "message";
+    String ACTION = "action";
+
+    /**
+     * 根据消息做自己的事情
+     *
+     * @param manager webSocket管理器
+     * @param object  消息体转化的JSON
+     */
+    void doMessage(WebSocketManager manager, Map<String,Object> object);
+}

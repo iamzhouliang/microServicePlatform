@@ -1,0 +1,5 @@
+com.microservice.framework.security.configuration.OAuth2AutoConfiguration
+com.microservice.framework.security.configuration.OAuth2ExceptionHandler
+com.microservice.framework.security.configuration.StpInterfaceRedisImpl
+com.microservice.framework.security.configuration.feign.AutoSaSameConfiguration
+

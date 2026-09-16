@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.microservice</groupId>
+        <artifactId>micro-service-platform-dependencies</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>micro-service-platform-ai</artifactId>
+    <name>${project.artifactId}</name>
+    <description>AI 应用服务，提供智能体、知识库、RAG 对话、向量检索等功能</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <skipTests>true</skipTests>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ==================== 内部模块 ==================== -->
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>common-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>ai-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>ai-harness-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice.framework</groupId>
+            <artifactId>feign-plugin-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice</groupId>
+            <artifactId>micro-service-platform-suite-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microservice</groupId>
+            <artifactId>micro-service-platform-iam-api</artifactId>
+        </dependency>
+
+        <!-- ==================== Spring Boot ==================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- ==================== Spring Cloud Alibaba ==================== -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <!-- ==================== 数据库 ==================== -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.milvus</groupId>
+            <artifactId>milvus-sdk-java</artifactId>
+            <version>2.6.4</version>
+        </dependency>
+
+        <!-- ==================== 文档解析器 ==================== -->
+        <!-- Apache Tika 文档解析器（支持 PDF、Word、Excel、PPT 等） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-document-parser-apache-tika</artifactId>
+        </dependency>
+
+        <!-- ==================== Graph RAG（图谱增强检索） ==================== -->
+        <!-- LangChain4j 图谱转换器（包含 GraphDocument、GraphNode、GraphEdge 等） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-llm-graph-transformer</artifactId>
+        </dependency>
+        <!-- LangChain4j Neo4j 图谱检索 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-neo4j</artifactId>
+        </dependency>
+        <!-- Neo4j Java Driver -->
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+        </dependency>
+
+        <!-- ==================== 工具库 ==================== -->
+        <dependency>
+            <groupId>org.mapdb</groupId>
+            <artifactId>mapdb</artifactId>
+            <version>3.0.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-agentic</artifactId>
+        </dependency>
+
+        <!-- ==================== 工作流节点依赖 ==================== -->
+        <!-- JSONPath for variable node -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
+        <!-- GraalVM Polyglot for code node (JavaScript execution) -->
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+            <version>24.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>js</artifactId>
+            <version>24.1.1</version>
+            <type>pom</type>
+        </dependency>
+
+        <!-- ==================== Test ==================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>milvus</artifactId>
+            <version>1.19.6</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- jqwik Property-Based Testing -->
+        <dependency>
+            <groupId>net.jqwik</groupId>
+            <artifactId>jqwik</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.name}</finalName>
+        <resources>
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <!-- Maven Surefire Plugin for JUnit 5 and jqwik -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*Properties.java</include>
+                    </includes>
+                    <properties>
+                        <configurationParameters>jqwik.tries.default=100</configurationParameters>
+                    </properties>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>com.microservice.platform.ai.AiApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-maven-plugin.version}</version>
+                <configuration>
+                    <formats>
+                        <format>
+                            <includes>
+                                <include>src/main/resources/application.yml</include>
+                                <include>src/main/resources/db/migration/V7__create_agent_harness_tables.sql</include>
+                            </includes>
+                            <lineEndings>UNIX</lineEndings>
+                            <trimTrailingWhitespace />
+                            <endWithNewline />
+                        </format>
+                    </formats>
+                    <java>
+                        <lineEndings>UNIX</lineEndings>
+                        <eclipse>
+                            <file>../../dev-support/spotless/wp_eclipse_formatter.xml</file>
+                        </eclipse>
+                        <licenseHeader>
+                            <file>../../dev-support/spotless/license-header</file>
+                        </licenseHeader>
+                        <trimTrailingWhitespace />
+                    </java>
+                    <pom>
+                        <lineEndings>UNIX</lineEndings>
+                        <sortPom>
+                            <encoding>UTF-8</encoding>
+                            <nrOfIndentSpace>4</nrOfIndentSpace>
+                            <keepBlankLines>true</keepBlankLines>
+                            <indentBlankLines>false</indentBlankLines>
+                            <indentSchemaLocation>false</indentSchemaLocation>
+                            <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
+                            <sortModules>false</sortModules>
+                            <sortExecutions>false</sortExecutions>
+                            <predefinedSortOrder>custom_1</predefinedSortOrder>
+                            <expandEmptyElements>false</expandEmptyElements>
+                            <sortProperties>false</sortProperties>
+                        </sortPom>
+                        <replace>
+                            <name>Leading blank line</name>
+                            <search>--&gt;&lt;project</search>
+                            <replacement>--&gt;&lt;project</replacement>
+                        </replace>
+                    </pom>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <configuration>
+                    <consoleOutput>true</consoleOutput>
+                    <failOnViolation>true</failOnViolation>
+                    <failsOnError>true</failsOnError>
+                    <violationSeverity>error</violationSeverity>
+                    <!--suppress MavenModelInspection -->
+                    <configLocation>../../dev-support/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <excludes>**/autogen/**/*</excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

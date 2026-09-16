@@ -1,0 +1,38 @@
+import type { RouteRecordRaw } from 'vue-router';
+
+import { DEFAULT_HOME_PATH } from '@vben/constants';
+
+import { BasicLayout } from '#/layouts';
+import { $t } from '#/locales';
+
+const routes: RouteRecordRaw[] = [
+  {
+    component: BasicLayout,
+    path: '/',
+    redirect: DEFAULT_HOME_PATH,
+    children: [
+      {
+        name: 'Analytics',
+        path: '/analytics',
+        component: () => import('#/views/dashboard/analytics/index.vue'),
+        meta: {
+          // affixTab: false,
+          icon: 'lucide:area-chart',
+          title: $t('page.dashboard.analytics'),
+        },
+      },
+      {
+        name: 'Workspace',
+        path: '/workspace',
+        component: () => import('#/views/dashboard/workspace/index.vue'),
+        meta: {
+          affixTab: true,
+          icon: 'carbon:workspace',
+          title: $t('page.dashboard.workspace'),
+        },
+      },
+    ],
+  },
+];
+
+export default routes;

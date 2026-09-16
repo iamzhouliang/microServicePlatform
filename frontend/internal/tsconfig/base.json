@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base",
+  "compilerOptions": {
+    "composite": false,
+    "target": "ESNext",
+
+    "moduleDetection": "force",
+    "experimentalDecorators": true,
+
+    "baseUrl": ".",
+    "module": "ESNext",
+
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+
+    "strict": false,
+    "alwaysStrict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+
+    // 显式放宽：仓库遗留代码量大，按需收紧
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noUncheckedIndexedAccess": false,
+
+    "inlineSources": false,
+    "noEmit": true,
+    "removeComments": true,
+    "sourceMap": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "preserveWatchOutput": true
+  },
+  "exclude": ["**/node_modules/**", "**/dist/**", "**/.turbo/**"]
+}

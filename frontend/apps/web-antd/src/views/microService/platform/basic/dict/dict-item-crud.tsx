@@ -1,0 +1,117 @@
+import type {
+  AddReq,
+  CreateCrudOptionsProps,
+  CreateCrudOptionsRet,
+  DelReq,
+  EditReq,
+  UserPageQuery,
+  ValueBuilderContext,
+} from '@fast-crud/fast-crud';
+
+import { dict } from '@fast-crud/fast-crud';
+
+import { defHttp } from '#/api/request';
+import {
+  createTimeReadonlyColumn,
+  hiddenIdColumn,
+} from '#/plugin/fast-crud/shared';
+
+export default function crud(
+  _props: CreateCrudOptionsProps,
+): CreateCrudOptionsRet {
+  return {
+    crudOptions: {
+      request: {
+        pageRequest: async (query: UserPageQuery) => {
+          // 未选中字典时返回空数据
+          if (!query.parentId) {
+            return { currentPage: 1, pageSize: 10, total: 0, records: [] };
+          }
+          return await defHttp.get(
+            `/iam/dict/items?parentId=${query.parentId}`,
+            {
+              params: query,
+            },
+          );
+        },
+        addRequest: async ({ form }: AddReq) =>
+          await defHttp.post(`/iam/dict/create`, form),
+        editRequest: async ({ form }: EditReq) =>
+          await defHttp.put(`/iam/dict/${form.id}`, form),
+        delRequest: async ({ row }: DelReq) =>
+          await defHttp.delete(`/iam/dict/${row.id}`),
+      },
+      container: {
+        is: 'fs-layout-default',
+      },
+      actionbar: { buttons: { add: { show: false } } },
+      toolbar: { buttons: { refresh: { show: false } } },
+      rowHandle: {
+        width: 140,
+        align: 'center',
+        buttons: { view: { show: false } },
+      },
+      columns: {
+        id: hiddenIdColumn,
+        parentId: {
+          title: '上级字典ID',
+          type: 'text',
+          form: { show: false },
+          column: { show: false },
+        },
+        name: {
+          title: '名称',
+          search: { show: true },
+          column: { show: true, width: 160 },
+          type: 'text',
+          form: {
+            rules: [{ required: true, message: '编码不能为空' }],
+          },
+        },
+        code: {
+          title: '编码',
+          search: { show: false },
+          column: { show: true, width: 160 },
+          type: 'text',
+          form: {
+            rules: [{ required: true, message: '编码不能为空' }],
+          },
+        },
+        status: {
+          title: '状态',
+          type: 'dict-radio',
+          column: { show: true, width: 100 },
+          search: { show: true },
+          dict: dict({
+            data: [
+              { value: 1, label: '启用', color: 'success' },
+              { value: 0, label: '禁用', color: 'error' },
+            ],
+          }),
+          addForm: { value: 1 },
+          valueBuilder({ value, row, key }: ValueBuilderContext): void {
+            if (value !== null) {
+              row[key] = value === true ? 1 : 0;
+            }
+          },
+        },
+        sequence: {
+          title: '排序',
+          type: 'number',
+          addForm: { value: 0 },
+          column: { show: true, width: 80 },
+          form: { component: { min: 0, max: 1000 } },
+        },
+        description: {
+          title: '描述',
+          column: { show: true, ellipsis: true, width: 180 },
+          type: 'textarea',
+          form: {
+            col: { span: 24 },
+          },
+        },
+        createTime: createTimeReadonlyColumn,
+      },
+    },
+  };
+}

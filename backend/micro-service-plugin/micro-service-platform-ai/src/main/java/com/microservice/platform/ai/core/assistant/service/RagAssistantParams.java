@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.platform.ai.core.assistant.service;
+
+import com.microservice.platform.ai.core.enums.ChunkType;
+import com.microservice.platform.ai.domain.entity.ModelEntity;
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.Map;
+
+/**
+ * RAG 助手参数配置
+ * 支持向量检索和图谱检索两种模式，可单独使用或混合使用（Hybrid RAG）
+ *
+ * @author xJh
+ * @since 2025/10/11
+ */
+@Data
+@Builder
+public class RagAssistantParams {
+
+    /**
+     * 知识库ID
+     */
+    private Long kbId;
+
+    /**
+     * 文本模型配置
+     */
+    private ModelEntity textModelEntity;
+
+    /**
+     * 向量模型配置
+     */
+    private ModelEntity embeddingModelEntity;
+
+    /**
+     * 最大记忆消息数
+     */
+    @Builder.Default
+    private Integer maxMessages = 10;
+
+    /**
+     * 向量检索最大返回结果数
+     */
+    @Builder.Default
+    private Integer maxResults = 5;
+
+    /**
+     * 向量检索最小相似度分数
+     */
+    @Builder.Default
+    private Double minScore = 0.7;
+
+    /**
+     * 向量检索元数据等值过滤条件
+     */
+    private Map<String, String> metadataFilter;
+
+    /**
+     * 向量检索过滤的块类型
+     */
+    @Builder.Default
+    private ChunkType filterChunkType = ChunkType.ANSWER;
+
+    // ==================== 图谱检索配置 ====================
+
+    /**
+     * 是否启用向量检索
+     */
+    @Builder.Default
+    private Boolean enableVectorRetrieval = true;
+
+    /**
+     * 是否启用图谱检索
+     */
+    @Builder.Default
+    private Boolean enableGraphRetrieval = false;
+
+    /**
+     * 图谱知识库ID（如果与 kbId 不同）
+     */
+    private String graphKnowledgeBaseId;
+
+    /**
+     * 图谱检索最大返回结果数
+     */
+    @Builder.Default
+    private Integer graphMaxResults = 10;
+
+    // ==================== 重排序配置 ====================
+
+    /**
+     * 重排序模型配置（使用 ModelConfig 统一管理）
+     * 如果配置了该字段，则启用重排序
+     */
+    private ModelEntity rerankModelEntity;
+
+    /**
+     * 重排序后返回的最大结果数
+     */
+    @Builder.Default
+    private Integer rerankMaxResults = 5;
+
+    /**
+     * 重排序最小相关性分数阈值
+     */
+    @Builder.Default
+    private Double rerankMinScore = 0.5;
+
+    /**
+     * 是否启用重排序
+     * @return 处理结果
+     */
+    public boolean isRerankingEnabled() {
+        return rerankModelEntity != null;
+    }
+
+    /**
+     * 获取图谱知识库ID
+     * 如果未单独指定，则使用 kbId 转为字符串
+     * @return 处理结果
+     */
+    public String getEffectiveGraphKbId() {
+        if (graphKnowledgeBaseId != null && !graphKnowledgeBaseId.trim().isEmpty()) {
+            return graphKnowledgeBaseId;
+        }
+        return kbId != null ? String.valueOf(kbId) : null;
+    }
+}

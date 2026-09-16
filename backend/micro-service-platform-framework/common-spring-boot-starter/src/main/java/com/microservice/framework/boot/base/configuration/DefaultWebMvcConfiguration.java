@@ -1,0 +1,184 @@
+/*
+ * Copyright (c) 2023 MICRO-SERVICE-PLATFORM Authors. All Rights Reserved.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.microservice.framework.boot.base.configuration;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.PackageVersion;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import com.microservice.framework.boot.base.HttpInterceptor;
+import com.microservice.framework.boot.base.converter.*;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+ * 基础配置类
+ *
+ * @author Levin
+ */
+@Slf4j
+@Configuration
+public class DefaultWebMvcConfiguration implements WebMvcConfigurer {
+
+    @Value("${spring.jackson.date-format:yyyy-MM-dd HH:mm:ss}")
+    private String pattern;
+
+    /**
+     * 枚举类的转换器工厂 addConverterFactory
+     */
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        registry.addConverterFactory(new IntegerCodeToEnumConverterFactory());
+        registry.addConverterFactory(new StringCodeToEnumConverterFactory());
+    }
+
+    @Override
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
+        registry.addInterceptor(new HttpInterceptor());
+    }
+
+    /**
+     * Spring Boot 4 正确做法：通过 JsonMapperBuilderCustomizer 定制 Jackson 3 的 JsonMapper
+     * 注册 Long→String 序列化器，防止前端 JavaScript 精度丢失
+     */
+    @Bean
+    public org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer longToStringCustomizer() {
+        return builder -> {
+            tools.jackson.databind.module.SimpleModule longModule = new tools.jackson.databind.module.SimpleModule("LongToString");
+            longModule.addSerializer(Long.class, tools.jackson.databind.ser.std.ToStringSerializer.instance);
+            longModule.addSerializer(Long.TYPE, tools.jackson.databind.ser.std.ToStringSerializer.instance);
+            longModule.addSerializer(long.class, tools.jackson.databind.ser.std.ToStringSerializer.instance);
+            builder.addModule(longModule);
+            log.info(">>> Registered Long->String serializer via JsonMapperBuilderCustomizer (Jackson 3)");
+        };
+    }
+
+    /**
+     * 提供全局 Jackson 2 ObjectMapper Bean（供非 HTTP 场景使用，如 JacksonUtils 等）
+     * HTTP 序列化已由上方 JsonMapperBuilderCustomizer 处理
+     */
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        // 基础配置
+        objectMapper.setLocale(Locale.CHINA);
+        objectMapper.setTimeZone(TimeZone.getTimeZone(ZoneId.systemDefault()));
+        objectMapper.setDateFormat(new java.text.SimpleDateFormat(pattern));
+        // 反序列化时，忽略JSON字符串中存在而Java对象实际没有的属性
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        // 序列化时，如果是空对象，不抛出异常
+        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        // 时间戳序列化为ISO-8601格式的字符串，而不是数字
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // Long 类型序列化为 String，防止前端精度丢失（包含包装类型和原始类型）
+        SimpleModule longModule = new SimpleModule();
+        longModule.addSerializer(Long.class, ToStringSerializer.instance);
+        longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
+        longModule.addSerializer(long.class, ToStringSerializer.instance);
+        objectMapper.registerModule(longModule);
+        // 时间模块
+        objectMapper.registerModule(new LocalJavaTimeModule());
+        objectMapper.registerModule(new JavaTimeModule());
+        return objectMapper;
+    }
+
+    /**
+     * 解决 @RequestParam(value = "date") Date date
+     * date 类型参数 格式问题
+     */
+    @Bean
+    public Converter<String, Date> dateConvert() {
+        return new String2DateConverter();
+    }
+
+    /**
+     * 解决 @RequestParam(value = "time") LocalDate time
+     */
+    @Bean
+    public Converter<String, LocalDate> localDateConverter() {
+        return new String2LocalDateConverter();
+    }
+
+    /**
+     * 解决 @RequestParam(value = "time") LocalTime time
+     */
+    @Bean
+    public Converter<String, LocalTime> localTimeConverter() {
+        return new String2LocalTimeConverter();
+    }
+
+    /**
+     * 解决 @RequestParam(value = "time") LocalDateTime time
+     */
+    @Bean
+    public Converter<String, LocalDateTime> localDateTimeConverter() {
+        return new String2LocalDateTimeConverter();
+    }
+
+    static class LocalJavaTimeModule extends SimpleModule {
+
+        private static final String NORM_DATE_PATTERN = "yyyy-MM-dd";
+        private static final String NORM_TIME_PATTERN = "HH:mm:ss";
+        private static final String NORM_DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
+        LocalJavaTimeModule() {
+            super(PackageVersion.VERSION);
+            this.addSerializer(LocalDateTime.class,
+                    new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(NORM_DATETIME_PATTERN)));
+            this.addSerializer(LocalDate.class,
+                    new LocalDateSerializer(DateTimeFormatter.ofPattern(NORM_DATE_PATTERN)));
+            this.addSerializer(LocalTime.class,
+                    new LocalTimeSerializer(DateTimeFormatter.ofPattern(NORM_TIME_PATTERN)));
+            this.addDeserializer(LocalDateTime.class,
+                    new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(NORM_DATETIME_PATTERN)));
+            this.addDeserializer(LocalDate.class,
+                    new LocalDateDeserializer(DateTimeFormatter.ofPattern(NORM_DATE_PATTERN)));
+            this.addDeserializer(LocalTime.class,
+                    new LocalTimeDeserializer(DateTimeFormatter.ofPattern(NORM_TIME_PATTERN)));
+        }
+    }
+}
