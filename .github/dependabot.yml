@@ -1,0 +1,85 @@
+version: 2
+updates:
+  # GitHub Actions 自动 PR 更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Shanghai"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    # 限速：每周最多 3 个 PR
+    open-pull-requests-limit: 3
+
+  # 前端 pnpm 依赖自动 PR 更新（按 groups 分组，避免 PR 噪音）
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "03:00"
+      timezone: "Asia/Shanghai"
+    commit-message:
+      prefix: "deps(frontend)"
+    labels:
+      - "dependencies"
+      - "frontend"
+    groups:
+      # 运行时框架（vue / vue-router / pinia）合并一个 PR
+      runtime-frameworks:
+        patterns:
+          - "vue"
+          - "vue-router"
+          - "pinia"
+          - "@vben-core/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # UI 库独立 PR
+      ui-libs:
+        patterns:
+          - "ant-design-vue"
+          - "@ant-design/icons-vue"
+          - "@fast-crud/*"
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 5
+    # 忽略 lockfileVersion 引起的频繁 PR
+    ignore:
+      - dependency-name: "pnpm"
+        versions: "[8.x,)"
+
+  # 后端 Maven 依赖自动 PR 更新
+  - package-ecosystem: "maven"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "03:00"
+      timezone: "Asia/Shanghai"
+    commit-message:
+      prefix: "deps(backend)"
+    labels:
+      - "dependencies"
+      - "backend"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "org.springframework.cloud:*"
+          - "org.springframework.cloud:*"
+          - "com.alibaba.cloud:*"
+          - "com.microservice:*"
+      commons:
+        patterns:
+          - "cn.hutool:*"
+          - "com.baomidou:*"
+          - "cn.dev33:*"
+          - "org.projectlombok:*"
+    open-pull-requests-limit: 5

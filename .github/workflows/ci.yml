@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 取消同 PR 已有的运行（节省 CI 时间）
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ----------------------------------------------------------------
+  # Backend: 编译依赖 + framework + feign + 各业务模块
+  # ----------------------------------------------------------------
+  backend-build:
+    name: Backend (Java 21)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-key-prefix: 'maven-${{ matrix.java }}'
+          cache-dependency-path: |
+            backend/**/pom.xml
+
+      - name: Install dependencies + framework + feign
+        run: |
+          mvn -B -ntp install -DskipTests \
+            -f backend/micro-service-platform-dependencies/pom.xml \
+            -f backend/micro-service-platform-framework/pom.xml \
+            -f backend/micro-service-platform-feign/pom.xml
+
+      - name: Compile all modules
+        run: |
+          mvn -B -ntp -DskipTests compile \
+            -f backend/micro-service-platform-iam/pom.xml \
+            -f backend/micro-service-platform-gateway/pom.xml \
+            -f backend/micro-service-platform-suite/pom.xml \
+            -f backend/micro-service-plugin/micro-service-platform-ai/pom.xml \
+            -f backend/micro-service-plugin/micro-service-platform-wms/pom.xml \
+            -f backend/micro-service-plugin/micro-service-platform-monitor/pom.xml
+
+  # ----------------------------------------------------------------
+  # Frontend: pnpm install + typecheck + lint + build
+  # ----------------------------------------------------------------
+  frontend-build:
+    name: Frontend (Node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (web-antd)
+        working-directory: frontend
+        run: pnpm -F @vben/web-antd run typecheck
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm run lint
+
+      - name: Build web-antd
+        working-directory: frontend
+        run: pnpm run build:antd
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-antd-dist
+          path: frontend/apps/web-antd/dist
+          retention-days: 7
+          if-no-files-found: warn
